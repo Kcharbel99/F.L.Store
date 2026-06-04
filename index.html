@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fresh Market POS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark">FM</div>
+      <div>
+        <h1 id="headerShopName">Fresh Market</h1>
+        <p>Fruits &amp; Vegetables POS</p>
+      </div>
+    </div>
+    <div class="header-status">
+      <span id="connectionStatus" class="status-pill">Saved locally</span>
+      <span id="headerRate">1 USD = 89,500 LBP</span>
+      <span id="headerLowStock" class="warning-text">0 low stock</span>
+    </div>
+  </header>
+
+  <nav class="main-nav" aria-label="Main navigation">
+    <button class="nav-btn active" type="button" data-tab="items">Items</button>
+    <button class="nav-btn" type="button" data-tab="sales">Sales</button>
+    <button class="nav-btn" type="button" data-tab="reports">Reports</button>
+    <button class="nav-btn" type="button" data-tab="settings">Settings</button>
+  </nav>
+
+  <main class="app-main">
+    <section id="itemsTab" class="tab-panel active">
+      <div class="section-heading">
+        <div>
+          <h2>Items</h2>
+          <p>Manage products, prices, barcodes, and stock.</p>
+        </div>
+        <button id="addItemBtn" class="btn btn-primary btn-large" type="button">+ Add Item</button>
+      </div>
+
+      <div id="lowStockAlert" class="alert alert-warning hidden"></div>
+
+      <div class="toolbar">
+        <label class="field grow">
+          <span>Search</span>
+          <input id="itemSearch" type="search" placeholder="Search name or barcode">
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <select id="itemCategoryFilter">
+            <option value="all">All categories</option>
+            <option value="Fruit">Fruit</option>
+            <option value="Vegetable">Vegetable</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Status</span>
+          <select id="itemStatusFilter">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="low">Low stock</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Category</th>
+              <th>Unit</th>
+              <th>Saved Price</th>
+              <th>USD Equivalent</th>
+              <th>LBP Equivalent</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="itemsTableBody"></tbody>
+        </table>
+      </div>
+      <div id="itemsEmpty" class="empty-state hidden">No items match the current filters.</div>
+    </section>
+
+    <section id="salesTab" class="tab-panel">
+      <div class="section-heading">
+        <div>
+          <h2>New Sale</h2>
+          <p id="salesRateNote">Prices use 1 USD = 89,500 LBP.</p>
+        </div>
+        <button id="clearCartBtn" class="btn btn-secondary" type="button">Clear Cart</button>
+      </div>
+
+      <div class="pos-layout">
+        <div class="product-panel card">
+          <div class="toolbar compact">
+            <label class="field grow">
+              <span>Find item / scan barcode</span>
+              <input id="posSearch" type="search" placeholder="Type item name or barcode">
+            </label>
+            <label class="field">
+              <span>Category</span>
+              <select id="posCategoryFilter">
+                <option value="all">All</option>
+                <option value="Fruit">Fruit</option>
+                <option value="Vegetable">Vegetable</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+          </div>
+          <div id="productGrid" class="product-grid"></div>
+          <div id="productsEmpty" class="empty-state hidden">No active items found.</div>
+        </div>
+
+        <aside class="cart-panel card">
+          <div class="cart-title">
+            <h3>Current Cart</h3>
+            <span id="cartCount" class="count-badge">0 items</span>
+          </div>
+
+          <div class="cart-table-wrap">
+            <table class="cart-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="cartTableBody"></tbody>
+            </table>
+            <div id="cartEmpty" class="empty-state">Cart is empty. Select an item to begin.</div>
+          </div>
+
+          <div class="checkout-controls">
+            <div class="two-fields">
+              <label class="field">
+                <span>Discount type</span>
+                <select id="discountType">
+                  <option value="none">No discount</option>
+                  <option value="fixed">Fixed amount</option>
+                  <option value="percent">Percentage</option>
+                </select>
+              </label>
+              <label class="field">
+                <span id="discountValueLabel">Discount value</span>
+                <input id="discountValue" type="number" min="0" step="0.01" value="0" disabled>
+              </label>
+            </div>
+            <div class="two-fields cash-fields">
+              <label class="field">
+                <span>Cash received currency</span>
+                <select id="paymentCurrency">
+                  <option value="USD">USD</option>
+                  <option value="LBP">LBP</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Cash received amount</span>
+                <input id="cashReceived" type="number" min="0" step="0.01" placeholder="Example: 50 or 100">
+              </label>
+            </div>
+          </div>
+
+          <div class="totals">
+            <div><span>Subtotal</span><strong id="cartSubtotal">$0.00 / 0 LBP</strong></div>
+            <div><span>Discount</span><strong id="cartDiscount">$0.00 / 0 LBP</strong></div>
+            <div class="grand-total"><span>Final total</span><strong id="cartTotal">$0.00 / 0 LBP</strong></div>
+            <div class="amount-due"><span id="amountDueLabel">Amount due (USD)</span><strong id="amountDue">$0.00</strong></div>
+            <div><span id="cashReceivedLabel">Cash received (USD)</span><strong id="cashReceivedDisplay">Not entered</strong></div>
+            <div class="change-due"><span>Change equivalents</span><strong id="changeDue">$0.00 / 0 LBP</strong></div>
+            <div><span>Suggested return (USD + LBP)</span><strong id="mixedChangeDue">$0.00 + 0 LBP</strong></div>
+            <p id="cashPaymentStatus" class="cash-payment-status">Enter the cash received to calculate change.</p>
+          </div>
+
+          <div class="cart-actions">
+            <button id="completeSaleBtn" class="btn btn-primary btn-xlarge" type="button">Complete Sale</button>
+            <button id="printLastInvoiceBtn" class="btn btn-secondary btn-large" type="button" disabled>Print Last Invoice</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="reportsTab" class="tab-panel">
+      <div class="section-heading">
+        <div>
+          <h2>Sales Reports</h2>
+          <p>Review saved invoices using their original exchange rates.</p>
+        </div>
+        <button id="exportReportsBtn" class="btn btn-primary" type="button">Export Excel</button>
+      </div>
+
+      <div class="toolbar report-toolbar">
+        <label class="field">
+          <span>Period</span>
+          <select id="reportPeriod">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="custom">Custom range</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>From</span>
+          <input id="reportFrom" type="date">
+        </label>
+        <label class="field">
+          <span>To</span>
+          <input id="reportTo" type="date">
+        </label>
+        <button id="applyReportFilterBtn" class="btn btn-secondary align-end" type="button">Apply Filter</button>
+      </div>
+
+      <div class="summary-grid">
+        <article class="summary-card">
+          <span>Total Sales USD</span>
+          <strong id="reportTotalUSD">$0.00</strong>
+        </article>
+        <article class="summary-card">
+          <span>Total Sales LBP</span>
+          <strong id="reportTotalLBP">0 LBP</strong>
+        </article>
+        <article class="summary-card">
+          <span>Invoices</span>
+          <strong id="reportInvoiceCount">0</strong>
+        </article>
+        <article class="summary-card">
+          <span>Quantity Sold</span>
+          <strong id="reportQuantity">0</strong>
+        </article>
+        <article class="summary-card wide">
+          <span>Best-Selling Items</span>
+          <strong id="reportBestItems">No sales</strong>
+        </article>
+        <article class="summary-card wide">
+          <span>Payments</span>
+          <strong id="reportPayments">USD: 0 invoices | LBP: 0 invoices</strong>
+        </article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice</th>
+              <th>Date</th>
+              <th>Items</th>
+              <th>Rate Used</th>
+              <th>Total USD</th>
+              <th>Total LBP</th>
+              <th>Payment</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reportsTableBody"></tbody>
+        </table>
+      </div>
+      <div id="reportsEmpty" class="empty-state hidden">No sales in this period.</div>
+    </section>
+
+    <section id="settingsTab" class="tab-panel">
+      <div class="section-heading">
+        <div>
+          <h2>Settings</h2>
+          <p>Shop details, currency, and local data management.</p>
+        </div>
+      </div>
+
+      <form id="settingsForm">
+        <div class="settings-save-bar">
+          <div class="settings-save-copy">
+            <strong>Settings changes</strong>
+            <span id="settingsSaveStatus" class="settings-save-status saved" role="status">All settings saved locally.</span>
+          </div>
+          <button id="saveSettingsBtn" class="btn btn-primary btn-large" type="submit">Save All Settings</button>
+        </div>
+
+        <div class="settings-grid">
+          <section class="card settings-card">
+            <h3>Shop Information</h3>
+            <label class="field">
+              <span>Shop name</span>
+              <input id="shopName" type="text" required maxlength="100">
+            </label>
+            <label class="field">
+              <span>Phone number</span>
+              <input id="shopPhone" type="text" maxlength="50">
+            </label>
+            <label class="field">
+              <span>Address</span>
+              <textarea id="shopAddress" rows="3" maxlength="250"></textarea>
+            </label>
+            <label class="field">
+              <span>Invoice thank you message</span>
+              <input id="thankYouMessage" type="text" maxlength="150">
+            </label>
+          </section>
+
+          <section class="card settings-card">
+            <h3>Currency</h3>
+            <label class="field">
+              <span>USD to LBP exchange rate</span>
+              <div class="input-suffix">
+                <input id="exchangeRate" type="number" min="1" step="1" required>
+                <span>LBP per USD</span>
+              </div>
+            </label>
+            <p class="form-help">Example: enter 89500 for 1 USD = 89,500 LBP.</p>
+            <label class="field">
+              <span>Default display currency</span>
+              <select id="defaultCurrency">
+                <option value="USD">USD</option>
+                <option value="LBP">LBP</option>
+                <option value="BOTH">Both USD and LBP</option>
+              </select>
+            </label>
+          </section>
+
+          <section class="card settings-card">
+            <h3>Backup &amp; Restore</h3>
+            <p class="form-help">Backup includes items, sales, settings, and invoice numbering.</p>
+            <div class="stacked-actions">
+              <button id="backupDataBtn" class="btn btn-secondary" type="button">Download Backup</button>
+              <button id="restoreDataBtn" class="btn btn-secondary" type="button">Restore Backup</button>
+              <input id="restoreFileInput" class="hidden" type="file" accept=".json,application/json">
+            </div>
+          </section>
+
+          <section class="card settings-card danger-card">
+            <h3>Reset Data</h3>
+            <p class="form-help">These actions require confirmation and cannot be undone without a backup.</p>
+            <div class="stacked-actions">
+              <button id="resetSalesBtn" class="btn btn-danger-outline" type="button">Delete All Sales</button>
+              <button id="resetAllBtn" class="btn btn-danger" type="button">Reset Entire System</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="settings-bottom-actions">
+          <button class="btn btn-primary btn-large" type="submit">Save All Settings</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div id="itemModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="itemModalTitle">
+    <div class="modal-backdrop" data-close-modal="item"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="itemModalTitle">Add Item</h2>
+        <button class="icon-btn" type="button" data-close-modal="item" aria-label="Close">&times;</button>
+      </div>
+      <form id="itemForm">
+        <input id="itemId" type="hidden">
+        <div class="form-grid">
+          <label class="field span-2">
+            <span>Item name *</span>
+            <input id="itemName" type="text" required maxlength="100">
+          </label>
+          <label class="field">
+            <span>Category *</span>
+            <select id="itemCategory" required>
+              <option value="Fruit">Fruit</option>
+              <option value="Vegetable">Vegetable</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Unit type *</span>
+            <select id="itemUnit" required>
+              <option value="kg">kg</option>
+              <option value="piece">piece</option>
+              <option value="box">box</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Selling price *</span>
+            <input id="itemPrice" type="number" min="0" step="0.01" required>
+          </label>
+          <label class="field">
+            <span>Price currency *</span>
+            <select id="itemCurrency" required>
+              <option value="USD">USD</option>
+              <option value="LBP">LBP</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Cost price (optional)</span>
+            <input id="itemCostPrice" type="number" min="0" step="0.01">
+          </label>
+          <label class="field">
+            <span>Stock quantity (optional)</span>
+            <input id="itemStock" type="number" min="0" step="0.001" placeholder="Blank = not tracked">
+          </label>
+          <label class="field">
+            <span>Low stock alert at</span>
+            <input id="itemLowStock" type="number" min="0" step="0.001" value="5">
+          </label>
+          <label class="field">
+            <span>Barcode (optional)</span>
+            <input id="itemBarcode" type="text" maxlength="100">
+          </label>
+          <label class="check-field span-2">
+            <input id="itemActive" type="checkbox" checked>
+            <span>Item is active and available in Sales</span>
+          </label>
+        </div>
+        <div id="itemPricePreview" class="price-preview"></div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" type="button" data-close-modal="item">Cancel</button>
+          <button class="btn btn-primary" type="submit">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="invoiceModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="invoiceModalTitle">
+    <div class="modal-backdrop" data-close-modal="invoice"></div>
+    <div class="modal-box invoice-modal-box">
+      <div class="modal-header no-print">
+        <h2 id="invoiceModalTitle">Invoice</h2>
+        <button class="icon-btn" type="button" data-close-modal="invoice" aria-label="Close">&times;</button>
+      </div>
+      <div id="printArea"></div>
+      <div class="modal-actions no-print">
+        <button class="btn btn-secondary" type="button" data-close-modal="invoice">Close</button>
+        <button id="printInvoiceBtn" class="btn btn-primary" type="button">Print Invoice</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
